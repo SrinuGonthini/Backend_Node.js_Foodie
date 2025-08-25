@@ -5,12 +5,12 @@ const restaurantSchema = new Schema({
     restaurantName: {
         type: String,
         required: true,
-        unique: true,
         trim: true
     },
     area: {
         type: String,
         required: true,
+        unique: true,
         trim: true
     },
     category:{

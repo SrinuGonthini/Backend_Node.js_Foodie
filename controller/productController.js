@@ -1,13 +1,14 @@
 const Product = require('../models/product')
 const Restaurant = require('../models/restaurant')
 const multer = require('multer')
+const path = require('path')
 
 const storage = multer.diskStorage({
     destination: function(req,file,cb) {
         cb(null,'uploads/')
     },
     filename: function(req,file,cb) {
-        cb(null,Date.now() + '-' + file.originalname)
+        cb(null,Date.now() + path.extname(file.originalname))
     }
 })
 
@@ -45,15 +46,46 @@ const getProducts = async (req,res) => {
     }
 }
 
+const getProduct = async (req,res) => {
+    try{
+        const productId = req.params.id
+        const product = await Product.findById(productId)
+        if(!product) return res.sendStatus(404);
+        res.json({product})
+    }catch(err){
+        res.sendStatus(500)
+    }
+}
+
+const updateProduct = async (req,res) => {
+    try{
+        const productId = req.params.id
+        const updates = req.body
+        const image = req.file ? req.file.filename : undefined
+        if(image) updates.image = image
+        const product = await Product.findById(productId)
+        if(!product) return res.sendStatus(404);
+        product.set(updates)
+        await product.save()
+        res.json({product})
+    }catch(err){
+        res.sendStatus(500)
+    }
+}
+
 const deleteProduct = async (req,res) => {
     try{
         const productId = req.params.id
         const product = await Product.findByIdAndDelete(productId)
         if(!product) return res.sendStatus(404);
+        await Restaurant.updateOne(
+            {_id:product.restaurant},
+            {$pull:{products:product._id}}
+        )
         res.json('product delete successfully')
     }catch(err){
         res.sendStatus(500)
     }
 }
 
-module.exports = {addProduct:[upload.single('image'),addProduct],getProducts,deleteProduct}
+module.exports = {addProduct:[upload.single('image'),addProduct],updateProduct:[upload.single('image'),updateProduct],getProducts,deleteProduct,getProduct}

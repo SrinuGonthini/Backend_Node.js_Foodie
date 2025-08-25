@@ -1,4 +1,5 @@
 const User = require('../models/vendor')
+const Restaurant = require('../models/restaurant')
 const jwt = require('jsonwebtoken')
 const bcrypt = require('bcrypt')
 
@@ -23,8 +24,15 @@ const handleVendorLogin = async(req,res) => {
             vendor.refreshToken = refreshToken;
             const result =await vendor.save();
 
+            const existingRestaurant = await Restaurant.findOne({ vendor: vendor._id }).exec();
+
+
             res.cookie('jwt',refreshToken,{httpOnly:true,maxAge:24*60*60*1000})
-            res.json({ accessToken })
+            res.status(200).json({ accessToken,result:{
+                id:result._id,
+                user:result.username,
+                email:result.email
+            },restaurant: existingRestaurant || null })
         }else{
             res.sendStatus(401)
         }

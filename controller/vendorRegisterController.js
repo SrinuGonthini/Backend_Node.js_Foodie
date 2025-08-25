@@ -1,3 +1,4 @@
+const vendor = require('../models/vendor')
 const User = require('../models/vendor')
 const bcrypt = require('bcrypt')
 
@@ -13,7 +14,7 @@ const handleVendorRegister = async(req,res) => {
             email:email,
             password : hashedpwd
         })
-        res.status(201).json({message:`${user} was Registered`})
+        res.status(201).json({message:`${user} was Registered`,vendor:result})
     }catch(err){
         res.status(500).json({error:'Internal error'})
     }

@@ -11,15 +11,10 @@ const productSchema = new Schema({
         required: true
     },
     category: {
-        type:[
-            {
-                type: String,
-                enum: ['veg','non-veg']
-            }
-        ]
+        type:Boolean
     },
     bestseller: {
-        type: String
+        type: Boolean
     },
     description: {
         type: String
