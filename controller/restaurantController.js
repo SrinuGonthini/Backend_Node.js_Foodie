@@ -18,13 +18,14 @@ const upload = multer({ storage });
 
 const addRestaurant = async (req,res) => {
     try{
-        const { restaurantName,area,category,region,offer } = req.body
+        const { restaurantName,area,city,category,region,offer } = req.body
         const image = req.file?req.file.filename:undefined
         const vendor = await User.findById(req.id)
         if(!vendor) return res.sendStatus(401);
         const result =await Restaurant.create({
             restaurantName,
             area,
+            city,
             category,
             region,
             offer,
