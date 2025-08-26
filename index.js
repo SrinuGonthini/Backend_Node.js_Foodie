@@ -4,6 +4,7 @@ const mongoose = require('mongoose')
 const connectDB = require('./config/connDB');
 const cookieParser = require('cookie-parser');
 const verifyJWT = require('./middleware/verifyJWT');
+const fs = require('fs')
 const path = require('path')
 const cors = require('cors');
 const corsOptions = require('./config/corsOptions');
