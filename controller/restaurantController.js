@@ -1,27 +1,27 @@
-
 const Restaurant = require('../models/restaurant')
 const Product = require('../models/product')
 const User = require('../models/vendor')
 const multer = require('multer')
-const path = require('path')
+const cloudinary = require('../config/cloudinary')
+const fs = require('fs')
 
-const storage = multer.diskStorage({
-    destination:function(req,file,cb){
-        cb(null,'uploads/');
-    },
-    filename: function(req,file,cb){
-        cb(null,Date.now()+ path.extname(file.originalname));
-    }
-})
-
-const upload = multer({ storage });
+const upload = multer({ dest:'temp/' });
 
 const addRestaurant = async (req,res) => {
     try{
         const { restaurantName,area,city,category,region,offer } = req.body
-        const image = req.file?req.file.filename:undefined
         const vendor = await User.findById(req.id)
         if(!vendor) return res.sendStatus(401);
+        let imageUrl = ''
+        let cloudinaryId = ''
+        if(req.file){
+            const result = await cloudinary.uploader.upload(req.file.path,{
+                folder:'restaurants'
+            })
+            imageUrl=result.secure_url
+            cloudinaryId=result.public_id
+            fs.unlinkSync(req.file.path)
+        }
         const result =await Restaurant.create({
             restaurantName,
             area,
@@ -29,7 +29,8 @@ const addRestaurant = async (req,res) => {
             category,
             region,
             offer,
-            image,
+            image:imageUrl,
+            cloudinaryId,
             vendor:vendor._id
         })
         vendor.restaurant.push(result)
@@ -67,12 +68,20 @@ const updateRestaurant = async (req,res) => {
     try{
         const restaurantId = req.params.id
         const updates = req.body
-        const image = req.file ? req.file.filename : undefined;
-        if (image) updates.image = image
         const restaurant = await Restaurant.findById(restaurantId)
         if(!restaurant) return res.sendStatus(404);
+        if(req.file){
+            if(restaurant.cloudinaryId){
+                await cloudinary.uploader.destroy(restaurant.cloudinaryId)
+            }
+            const result = await cloudinary.uploader.upload(req.file.path,{
+                folder:'restaurants'
+            })
+            updates.image = result.secure_url
+            updates.cloudinaryId = result.public_id
+            fs.unlinkSync(req.file.path)
+        }
         restaurant.set(updates)
-        if(image) restaurant.image = image
         await restaurant.save();
         res.json({restaurant})
     }catch(err){
@@ -86,6 +95,7 @@ const deleteRestaurant = async (req,res) => {
         await Product.deleteMany({restaurant:restaurantid})
         const restaurant = await Restaurant.findByIdAndDelete(restaurantid)
         if(!restaurant) return res.sendStatus(404);
+
         await User.updateOne(
             { _id: restaurant.vendor },
             { $pull: { restaurant: restaurant._id } }

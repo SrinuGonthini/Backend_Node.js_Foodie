@@ -4,11 +4,16 @@ const mongoose = require('mongoose')
 const connectDB = require('./config/connDB');
 const cookieParser = require('cookie-parser');
 const verifyJWT = require('./middleware/verifyJWT');
-const app = express()
 const path = require('path')
 const cors = require('cors');
 const corsOptions = require('./config/corsOptions');
 
+const tempDir = path.join(__dirname, 'temp');
+if (!fs.existsSync(tempDir)) {
+    fs.mkdirSync(tempDir);
+}
+
+const app = express()
 const PORT = process.env.PORT || 3500
 
 app.use(cors(corsOptions))

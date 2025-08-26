@@ -1,32 +1,36 @@
 const Product = require('../models/product')
 const Restaurant = require('../models/restaurant')
+const cloudinary = require('../config/cloudinary')
 const multer = require('multer')
-const path = require('path')
+const fs = require('fs')
 
-const storage = multer.diskStorage({
-    destination: function(req,file,cb) {
-        cb(null,'uploads/')
-    },
-    filename: function(req,file,cb) {
-        cb(null,Date.now() + path.extname(file.originalname))
-    }
-})
 
-const upload = multer({storage});
+
+const upload = multer({dest:'temp/'});
 
 const addProduct = async (req,res) => {
     const {productName,price,category,bestseller,description} = req.body
-    const image = req.file?req.file.filename:undefined;
     const restaurantId = req.params.id
     const restaurant = await Restaurant.findById(restaurantId)
     if(!restaurant) return res.sendStatus(404);
+    let imageUrl = ''
+    let cloudinaryId = ''
+    if(req.file){
+        const result = await cloudinary.uploader.upload(req.file.path,{
+            folder:'products'
+        })
+        imageUrl = result.secure_url
+        cloudinaryId = result.public_id
+        fs.unlinkSync(req.file.path)
+    }
     const result = await Product.create({
         productName,
         price,
         category,
         bestseller,
         description,
-        image,
+        image: imageUrl,
+        cloudinaryId,
         restaurant: restaurant._id
     })
     restaurant.products.push(result)
@@ -61,10 +65,19 @@ const updateProduct = async (req,res) => {
     try{
         const productId = req.params.id
         const updates = req.body
-        const image = req.file ? req.file.filename : undefined
-        if(image) updates.image = image
         const product = await Product.findById(productId)
         if(!product) return res.sendStatus(404);
+        if(req.file){
+            if(product.cloudinaryId){
+            await cloudinary.uploader.destroy(product.cloudinaryId)
+        }
+        const result = await cloudinary.uploader.upload(req.file.path,{
+            folder:'products'
+        })
+        updates.image = result.secure_url
+        updates.cloudinaryId = result.public_id
+        fs.unlinkSync(req.file.path)
+        }
         product.set(updates)
         await product.save()
         res.json({product})

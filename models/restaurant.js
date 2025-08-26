@@ -1,6 +1,5 @@
 const mongoose = require('mongoose');
-const fsPromise = require('fs').promises;
-const path = require('path')
+const cloudinary = require('../config/cloudinary')
 const {Schema} = mongoose;
 
 const restaurantSchema = new Schema({
@@ -31,7 +30,10 @@ const restaurantSchema = new Schema({
         type: String
     },
     image: {
-        type: String,
+        type: String
+    },
+    cloudinaryId: {
+        type: String
     },
     vendor:{
         type: Schema.Types.ObjectId,
@@ -48,17 +50,12 @@ restaurantSchema.index(
     {unique:true}
 )
 restaurantSchema.post('findOneAndDelete',async (doc) =>{
-    if(doc&&doc.image){
-        const imagePath = path.join(__dirname,'..','uploads',doc.image);
+    if(doc.cloudinaryId){
         try{
-            await fsPromise.unlink(imagePath)
-            console.log('Deleted Image', imagePath)
+            await cloudinary.uploader.destroy(doc.cloudinaryId)
+            console.log('Deleted Image', doc.cloudinaryId)
         }catch(err){
-            if (err.code === 'ENOENT') {
-                console.warn('Image file not found, skipping deletion:', imagePath);
-            } else {
-                console.error('Failed to delete image:', err);
-            }
+            console.error('Failed to delete image:', err);
         }
     }
 })
