@@ -1,4 +1,4 @@
-const whiteList = ['https://www.google.com','http://127.0.0.1:5500','http://localhost:3500']
+const whiteList = ['https://www.google.com','http://127.0.0.1:5500','http://localhost:3500','https://react-vendor-dashboard-sooty.vercel.app']
 
 const corsOptions = {
     origin : (origin,callback) => {
